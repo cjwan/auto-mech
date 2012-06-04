@@ -20,7 +20,7 @@ class ConfigSBT:
 			self.file = open('configJ'+str(self.numJ)+'.sbt','r')
 		except:
 			error("No se ha podido abrir el fichero configJ"+str(self.numJ)+".sbt .")
-			
+	
 	def leeFichero(self, fase):
 		# Comprobamos la cabecera para asegurar que es correcto.
 		cabecera = file.readline()

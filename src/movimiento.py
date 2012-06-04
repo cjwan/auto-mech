@@ -24,7 +24,7 @@ class Movimiento:
 		self.playerN = playerN
 		# Fichero mechsJx.sbt
 		self.mechs = MechsSBT(self.playerN)
-		self.mechs.leeFichero(0)
+		self.mechs.leeFichero()
 		# Fichero mapaJx.sbt
 		self.board = MapaSBT(self.playerN)
 		self.board.leeMapa()

@@ -10,7 +10,7 @@ import string
 
 def error(mensaje):
 	try:
-		log = open('logMap.txt','w')
+		log = open('logError.txt','w')
 	except:
 		raise SystemExit
 	else:

@@ -12,6 +12,8 @@ from mechsSBT import *
 from mapaSBT import *
 from configSBT import *
 from movimiento import *
+from reaccion import *
+from utils import *
 
 try:
 	log = open('log.txt','w')
@@ -33,7 +35,6 @@ class JugadorAutomatico:
 		
 def _0():
 	global log
-	
 	log.write("fase movimiento")
 	mov = Movimiento(int(sys.argv[1]))
 	mov.nextMove()
@@ -42,42 +43,26 @@ def _0():
 def _1():
 	global log
 	log.write("fase reaccion")
-	# Leemos el fichero de mechs
-	#~ robots = MechsSBT(int(sys.argv[1]))
-	#~ robots.leeFichero(1)
+	rea = Reaccion(int(sys.argv[1]))
+	rea.reacciona()
 
 def _2():
 	global log
 	log.write("fase At. Armas")
-	# Leemos el fichero de configuración
-	#~ conf = ConfigSBT(int(sys.argv[1]))
-	#~ conf.leeFichero(2)
+	
 
 def _3():
 	global log
 	log.write("fase At.fisico")
-	#~ # Leemos el fichero de configuración
-	#~ conf = ConfigSBT(int(sys.argv[1]))
-	#~ conf.leeFichero(3)
+	
 
 def _4():
 	global log
 	log.write("fase Final")
-	#~ # Leemos el fichero de mechs
-	#~ robots = MechsSBT(int(sys.argv[1]))
-	#~ robots.leeFichero(4)
-	#~ # Leemos el fichero de configuración
-	#~ conf = ConfigSBT(int(sys.argv[1]))
-	#~ conf.leeFichero(4)
+	
 
 FASE = { "Movimiento" : _0, "Reaccion" : _1, "AtaqueArmas" : _2,
 		"AtaqueFisico" : _3, "FinalTurno" : _4}
-
-def error(mensaje):
-	global log
-	log.write("ERROR! "+mensaje)
-	log.close()
-	raise SystemExit
 
 def main():
 	global player, salida_accion, log
