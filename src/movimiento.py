@@ -32,6 +32,7 @@ class Movimiento:
 		self.ini = Iniciativa(self.playerN)
 		# Fichero de configuración
 		self.conf = ConfigSBT(self.playerN)
+		self.conf.leeFichero()
 		
 		self.movType = None
 		self.nextCell = None
@@ -57,12 +58,12 @@ class Movimiento:
 	def setTarjet(self):
 		t = 0
 		distance = sys.maxint
+		d = sys.maxint
 		for m in self.mechs.mechs:
-			if m.nombre == self.playerN:
-				continue
-			d = dist2((int(self.jugador.hexagono[0:2]),
-				int(self.jugador.hexagono[2:4])),(int(m.hexagono[0:2]),
-				int( m.hexagono[2:4])))
+			if m.nombre != self.playerN and m.operativo:
+				d = dist2((int(self.jugador.hexagono[0:2]),
+					int(self.jugador.hexagono[2:4])),(int(m.hexagono[0:2]),
+					int( m.hexagono[2:4])))
 			if d < distance:
 				t = m.nombre
 				distance = d
@@ -92,15 +93,20 @@ class Movimiento:
 			self.stepCell.append((4,face))
 		
 		# Si nuestro turno es antes que el del enemigo -> Hide
-		if self.ini.posiciones.index(self.playerN)< self.ini.posiciones.index(enemy):
+		#~ if self.ini.posiciones.index(self.playerN)< self.ini.posiciones.index(enemy):
+		if self.ini.posiciones.index(self.playerN) == 0:
 			self._hide()
 		else: # Si nuestro turno es después -> Nos acercamos por detrás
+			
 			self.path, self.movType = self._approach(cellEnemy,faceTorsoEnemy)
+			print "Desde ",self.jugadorCell,"Lado ",self.jugadorLado," Hasta ",cellEnemy
+			print self.path,self.movType
 		self.fileAccion()
 	
 	""" Permanecer inmóvil.
 	"""
 	def _hide (self):
+		print "HIDE"
 		self.movType = 3
 	
 	""" Calcula el camino mínimo para acercarse al hexágono en el que se
@@ -113,24 +119,37 @@ class Movimiento:
 	def _approach (self, enemy, faceTorsoEnemy):
 		# Obtenemos las celdas adyacentes a la posición del enemigo.
 		x = adjacent_cells(enemy, faceTorsoEnemy)
+		
 		# Preparamos el algoritmo A*
 		pf = PathFinder(self.board.sucesores, self.board.moveCost, self.board.heuristic_to_goal)
 		A = Pos(self.jugadorCell, self.jugadorLado)
 		B = Pos(x, facing_side(x, enemy))
+		can = False
+		#~ print "hex =",self.jugador.hexagono
+		#~ print "Andar =",self.jugador.andar,"\nCorrer =",self.jugador.correr,"\nSaltar =",self.jugador.saltar
 		# Obtenemos un path andando.
+		#~ if self.jugador.andar != 0:
+		print "Andando"
 		path, can, cost = pf.compute_path_until_PM(A, B, 0,self.jugador.andar)
+		#~ print 'Path=',path,'\nCAN=',can,'\nCost=',cost
 		if can == False and self.jugador.correr != 0:
 			# Obtenemos un path corriendo
+			print "Corriendo"
 			path2, can2, cost2 = pf.compute_path_until_PM(A, B, 1, self.jugador.correr)
+			print 'Path=',path2,'\nCAN=',can2,'\nCost=',cost2
 			if can2 == True:
 				print (path2,1)
 				return (path2, 1)
 		if can == False and self.jugador.saltar != 0:
 			# Obtenemos un path saltando
+			print "Saltando"
 			path3, can3, cost3 = pf.compute_path_until_PM(A, B, 2, self.jugador.saltar)
+			print 'Path=',path3,'\nCAN=',can3,'\nCost=',cost3
 			if can3 == True:
 				print (path3,2)
 				return (path3,2)
+		#~ print "Can=",can,"\nPath: ",path
+		#~ print "Objetivo = ",x
 		return (path, 0)
 	
 	""" Calcula los pasos necesarios para realizar un movimiento en el
@@ -180,6 +199,16 @@ class Movimiento:
 		global mov, step
 		# Apertura del fichero. Modo escritura
 		file = open("accionJ"+ str(self.playerN)+".sbt","w")
+		
+		# Si no hemos encontrado un camino.
+		# Inmóvil
+		if self.path == [] or self.path == None:
+			print "LAST PATH=",self.path
+			self.movType = 3
+		elif len(self.path) == 1:
+			if int(self.jugador.hexagono[:2]) == self.path[0].pos[1]+1 and int(self.jugador.hexagono[2:4]) == self.path[0].pos[0]+1:
+				self.movType = 3
+				
 		# Tipo de movimiento a realizar
 		file.write(str(mov[self.movType])+"\n")
 		# Si es Levantarse

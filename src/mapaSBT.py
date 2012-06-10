@@ -8,6 +8,7 @@
 
 import celda
 from math import fabs
+from mechsSBT import *
 from pathfinder import Pos
 from utils import *
 
@@ -20,6 +21,12 @@ class MapaSBT(object):
 		self.mapa = []
 		self.nombre = 'mapaSBT'
 		self.leeMapa()
+		# Fichero mechsJx.sbt
+		mechs = MechsSBT(self.__numJ)
+		mechs.leeFichero()
+		self.posiciones_mechs = []
+		for m in mechs.mechs:
+			self.posiciones_mechs.append(m.hexagono)
 		
 	def getAncho(self):
 		return self.__ancho
@@ -104,9 +111,9 @@ class MapaSBT(object):
 		lado = 0
 		costeCara = 0
 		costeCelda = 0
+		lado = facing_side(p1, p2)
 		# Si Andar o Correr
 		if movType == 0 or movType == 1:
-			lado = facing_side(p1, p2)
 			# Coste total de orientarse a la cara correcta
 			costeCara = min( (c1.face - lado)%6, (lado - c1.face)%6 )
 			# Tipo de obstáculo.
@@ -134,8 +141,11 @@ class MapaSBT(object):
 			elif obj==6:
 				costeCelda = 5
 			# Si no hay obstáculo
-			else: 
-				costeCelda = 1
+			else:
+				if abs(self.mapa[p1[0]][p1[1]].nivel - self.mapa[p2[0]][p2[1]].nivel) != 0:
+					costeCelda = 2
+				else:
+					costeCelda = 1
 		# Si Saltar, 1 PM
 		elif movType==2:
 			costeCelda = 1
@@ -144,7 +154,7 @@ class MapaSBT(object):
 	""" Calcula los sucesores de la coordenada c.
 		@param c Coordenada de la que queremos conocer sus posibles sucesores.
 		@param movType Tipo de movimiento a realizar.
-		@param PM Coste máximo.
+		@param PM Posibles movimientos.
 	"""
 	def sucesores(self, c, movType = 0, PM = 15):
 		slist = []
@@ -167,6 +177,8 @@ class MapaSBT(object):
 					# Comprobamos que el movimiento entre celdas es correcto.
 					if (self.checkCelda(c, (newFil,newCol), movType, PM)):
 						slist.append((newFil, newCol))
+		#~ print "sucesores de (",c[0],",",c[1],")"
+		#~ print slist
 		return slist
 	
 	
@@ -177,26 +189,37 @@ class MapaSBT(object):
 	"""
 	def checkCelda(self, c1, c2, moveType = 0, PM = 15):
 		vale = False
-		# Si Correr y la profundidad del agua es < -1
-		if (self.mapa[c1[0]][c1[1]].nivel < -1 and moveType == 1):
+		mech = False
+		for m in self.posiciones_mechs:
+			if (int(m[2:4])-1 == c2[0]) and (int(m[:2])-1 == c2[1]):
+				mech = True
+		
+		if mech:
+			print "Coordenada",c2,self.mapa[c2[0]][c2[1]].objeto,self.mapa[c2[0]][c2[1]].garrote
+			print "Hay un mech"
+		# Si Correr o Andar y hay Fuego o un obstáculo o un mech
+		if ((self.mapa[c2[0]][c2[1]].fuego or (self.mapa[c2[0]][c2[1]].objeto != 1 and self.mapa[c2[0]][c2[1]].objeto != 255) or mech) and (moveType == 1 or moveType == 0)):
+			print "No puede!"
 			return False
-		# Si Correr o Andar y hay Fuego
-		if (self.mapa[c1[0]][c1[1]].fuego and (moveType == 1 or moveType == 0)):
+		# Si Correr y la profundidad del agua es < -1
+		if (self.mapa[c1[0]][c1[1]].terreno == 2 and self.mapa[c1[0]][c1[1]].nivel < -1 and moveType == 1):
 			return False
 		diff = abs( self.mapa[c1[0]][c1[1]].nivel - self.mapa[c2[0]][c2[1]].nivel )
 		# Si la diferencia de nivel <= 2 y Correr o Andar
 		if ( diff <= 2 and (moveType == 0 or moveType == 1)):
-			vale = True
+			if not mech:
+				vale = True
 		# Si Saltar y la diferencia de nivel <= PM
 		elif ( diff <= PM and moveType == 2):
-			vale = True
+			if not mech:
+				vale = True
 		return vale
 	
 	""" Heurística - Estimación del coste en distancia real de un
 		desplazamiento en una malla hexagonal.
 		@param c1 Pos
 		@param c2 Pos
-		@return Distancia
+		@return coste
 	"""
 	def heuristic_to_goal(self,c1,c2):
 		Vx = abs(c2.pos[0]-c1.pos[0])
@@ -207,7 +230,6 @@ class MapaSBT(object):
 			factor = (c1.pos[0]-1)%2
 		else:
 			factor = (c2.pos[0]-1)%2
-	
 		return Vx + max(0, Vy- (Vx/2) - factor)
 
 """ Obtiene el lado desde el que orientarnos de una casilla a otra.

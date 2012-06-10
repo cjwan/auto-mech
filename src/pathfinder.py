@@ -61,8 +61,11 @@ class PathFinder(object):
 		while len(open_set) > 0:
 			# Extrae el nodo con mínimo f_score de open_set
 			curr_node = open_set.pop_smallest()
+			#~ print curr_node
 			# Comprobamos si hemos alcanzado goal y orientamos el valor de face
+			#~ print " Comp ",curr_node.coord," Con ",goal.pos
 			if curr_node.coord == goal.pos:
+				#~ print "Hemos alcanzado GOAL"
 				if curr_node.face != goal.face:
 					# Corregimos el valor de curr_node.face
 					new = self._Node(curr_node.coord, goal.face, curr_node.g_cost+abs(curr_node.face - goal.face) , 0, curr_node)
@@ -79,14 +82,22 @@ class PathFinder(object):
 				# A cada nodo sucesor le calculamos el g_cost y el f_cost
 				(succ_node.g_cost, succ_node.face) = self._compute_g_cost(curr_node, succ_node, movType)
 				succ_node.f_cost = self._compute_f_cost(succ_node, goal)
-				if succ_node in closed_set: 
-					continue 
+				
+				if succ_node in closed_set:
+					#~ if succ_node.g_cost <= 10:
+					#~ print "Sucesor: ",succ_coord,"\nCoste G = ",succ_node.g_cost,"\nCoste F = ",succ_node.f_cost
+					continue
 				# Añadimos el nodo sucesor a open_set
 				if open_set.add(succ_node):
 					# Establecemos su predecesor
+					#~ if succ_node.g_cost <= 10:
+					#~ print "Sucesor: ",succ_coord,"\nCoste G = ",succ_node.g_cost,"\nCoste F = ",succ_node.f_cost
 					succ_node.pred = curr_node
 		# PATH NO ENCONTRADO
-		return []
+		#~ print "Cjto: ",closed_set.keys()
+		#~ print "Path no encontrado"
+		#~ return ([], False, 0)
+		return self._reconstruct_path_until_PM(curr_node, 1)
 	
 	def _compute_g_cost(self, from_node, to_node, movType = 0):
 		f = Pos(from_node.coord, from_node.face)
@@ -105,6 +116,7 @@ class PathFinder(object):
 		can = True
 		cost = 0
 		temp = Pos(node.coord, node.face)
+		#~ print "G COST = ",node.g_cost
 		if node.g_cost <= PM:
 			cost = node.g_cost
 			pth = [temp]
@@ -116,8 +128,10 @@ class PathFinder(object):
 			n = n.pred
 			if n.g_cost <= PM:
 				pth.append(Pos(n.coord, n.face))
-				if n.g_cost > cost: cost = n.g_cost
-		
+				if n.g_cost > cost:
+					cost = n.g_cost
+					can = True
+		#~ print (list(reversed(pth)), can, cost)
 		return (list(reversed(pth)), can, cost)
 	
 	""" Abstracción de un nodo para la búsqueda A* en un grafo.

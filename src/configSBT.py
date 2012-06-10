@@ -21,44 +21,44 @@ class ConfigSBT:
 		except:
 			error("No se ha podido abrir el fichero configJ"+str(self.numJ)+".sbt .")
 	
-	def leeFichero(self, fase):
+	def leeFichero(self):
 		# Comprobamos la cabecera para asegurar que es correcto.
-		cabecera = file.readline()
+		cabecera = self.file.readline()
 		if string.find(cabecera,self.nombre) == -1:
-			file.close()
+			self.file.close()
 			error("No es un fichero configSBT . ")
 		else:
 			# Incendios permitidos
-			self.fuego = str2bool(file.readline())
+			self.fuego = str2bool(self.file.readline())
 			# Viento permitido
-			self.viento = str2bool(file.readline())
+			self.viento = str2bool(self.file.readline())
 			# Dirección del viento
-			self.dir_viento = int(file.readline())
+			self.dir_viento = int(self.file.readline())
 			# Ataque físico permitido
-			self.at_fisico = str2bool(file.readline())
+			self.at_fisico = str2bool(self.file.readline())
 			# Fase de comprobación del calor
-			self.fase_calor = str2bool( file.readline())
+			self.fase_calor = str2bool(self.file.readline())
 			# Se permite devastar bosques
-			self.dest_bosque = str2bool(file.readline())
+			self.dest_bosque = str2bool(self.file.readline())
 			# Se permite devastar Edificios
-			self.dest_edificio = str2bool(file.readline())
+			self.dest_edificio = str2bool(self.file.readline())
 			# Chequeo de pilotaje
-			self.pilotCheck = str2bool(file.readline())
+			self.pilotCheck = str2bool(self.file.readline())
 			# Chequeo de daños
-			self.damageCheck = str2bool(file.readline())
+			self.damageCheck = str2bool(self.file.readline())
 			# Chequeo de desconexión
-			self.disconnectionCheck = str2bool(file.readline())
+			self.disconnectionCheck = str2bool(self.file.readline())
 			# Daños críticos permitidos
-			self.criticos = str2bool(file.readline())
+			self.criticos = str2bool(self.file.readline())
 			# Explosión de la munición permitida
-			self.explosion_municion = str2bool(file.readline())
+			self.explosion_municion = str2bool(self.file.readline())
 			# Se pueden apagar radiadores
-			self.apagar_radiadores = str2bool(file.readline())
+			self.apagar_radiadores = str2bool(self.file.readline())
 			# Chequeo de límite de tiempo
-			self.timeLimitCheck = str2bool(file.readline())
+			self.timeLimitCheck = str2bool(self.file.readline())
 			# Límite de tiempo
-			self.timeLimit = int(file.readline())
-			file.close()
+			self.timeLimit = int(self.file.readline())
+			self.file.close()
 		
 
 

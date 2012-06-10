@@ -13,7 +13,9 @@ from mapaSBT import *
 from configSBT import *
 from movimiento import *
 from reaccion import *
+from finalturno import *
 from utils import *
+from armas import *
 
 try:
 	log = open('log.txt','w')
@@ -48,16 +50,25 @@ def _1():
 
 def _2():
 	global log
+	acc = Armas(int(sys.argv[1]))
+	acc.weaponsAttack()
+	print "fin armas"
 	log.write("fase At. Armas")
 	
 
 def _3():
 	global log
+	print "AtaqueARmas"
+	acc = Armas(int(sys.argv[1]))
+	acc.physicalAttack()
 	log.write("fase At.fisico")
 	
 
 def _4():
 	global log
+	
+	ft = EndTurn(int(sys.argv[1]))
+	ft.printAction()
 	log.write("fase Final")
 	
 
@@ -66,6 +77,7 @@ FASE = { "Movimiento" : _0, "Reaccion" : _1, "AtaqueArmas" : _2,
 
 def main():
 	global player, salida_accion, log
+	print "Comienzo Programa"
 	# Argumentos
 	if len(sys.argv) == 3:
 		# Jugador
