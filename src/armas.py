@@ -72,115 +72,194 @@ class Armas:
 		if len(self.enemigosVista) > 0 :
 			choiseEnemy = int(self.enemyMoreNear())
 			# Si son adyacentes
-			if self.areAdjacent((int(self.jugador.hexagono[2:4]), int(self.jugador.hexagono[:2])), (int(self.enemigosVista[choiseEnemy].hexagono[2:4]), int(self.enemigosVista[choiseEnemy].hexagono[:2]))) == True :
-				print "Adyacentes!!"
-				if self.garrote:
-					print "ataque con garrote"
-					f.write("1\n")
-					f.write("BIBD\n")
-					f.write("3000\n")
-					f.write(self.enemigosVista[choiseEnemy]+"\n")
-					f.write("Mech\n")
-				# Si no tenemos garrote pegamos golpes
-				else :
-					print "Ataque con extremidades"
-					# Debemos estimar que ataques se realizaron en el turno de ataqueArmas para saber que extremidad se puede usar
-					enemy = self.enemigosVista[choiseEnemy]
+			if self.areAdjacent((int(self.jugador.hexagono[2:4])-1, int(self.jugador.hexagono[:2])-1), (int(self.enemigosVista[choiseEnemy].hexagono[2:4])-1, int(self.enemigosVista[choiseEnemy].hexagono[:2])-1)):
+				# Si la diferencia de nivel es <= 1
+				if abs(self.mapa.mapa[int(self.jugador.hexagono[2:4])-1][int(self.jugador.hexagono[:2])-1].nivel - self.mapa.mapa[int(self.enemigosVista[choiseEnemy].hexagono[2:4])-1][int(self.enemigosVista[choiseEnemy].hexagono[:2])-1].nivel) <= 1:
 					
-					# Comprobamos qué armas se pueden usar contra el enemigo elegido
-					choiseWeapons = self.choiseWeapons(enemy)
-					# Eleccion temperatura
-					temp = self.choiseTemperature(self.enemigosVista[choiseEnemy])
-					# Eleccion definitiva de las armas a lanzar
-					self.armasUsadas = self.shootWeapons(enemy, temp, choiseWeapons)
-					
-					# Si no tenemos armas.
-					if len(self.armasUsadas) <= 0:
-						if not enemy.suelo:
-							# Realizamos un combo.
-							f.write("3\n")
-							f.write("BI\n")
-							f.write("1000\n")
-							f.write(enemy.hexagono)
-							f.write("Mech\n")
-							
-							f.write("BD\n")
-							f.write("1000\n")
-							f.write(enemy.hexagono)
-							f.write("Mech\n")
-						else:
-							f.write("1\n")
-						
-						f.write("PD\n")
-						f.write("2000\n")
-						f.write(enemy.hexagono)
+					if self.garrote:
+						print "ataque con garrote"
+						f.write("1\n")
+						f.write("BIBD\n")
+						f.write("3000\n")
+						f.write(self.enemigosVista[choiseEnemy].hexagono)
 						f.write("Mech\n")
-					else:
-						BI = False
-						PI = False
-						BD = False
-						PD = False
-						used = 0
-						for i in range(len(self.armasUsadas)):
-							# Localizacion del arma
-							itemLocation = self.armasUsadas[i].getItemLocation()
-							if itemLocation == 0 :
-								BI = True
-							elif itemLocation == 2:
-								PI = True
-							elif itemLocation == 3:
-								PD = True
-							elif itemLocation == 5:
-								BD = True
-							
+					# Si no tenemos garrote pegamos golpes
+					else :
+						print "Ataque con extremidades"
+						# Debemos estimar que ataques se realizaron en el turno de ataqueArmas para saber que extremidad se puede usar
+						enemy = self.enemigosVista[choiseEnemy]
+						
+						# Si no tenemos armas.
+						if self.dmech[self.playerN].mech.getWeaponsNumber() == 0:
+							# Si estamos por encima
+							if self.mapa.mapa[int(self.jugador.hexagono[2:4])-1][int(self.jugador.hexagono[:2])-1].nivel - self.mapa.mapa[int(self.enemigosVista[choiseEnemy].hexagono[2:4])-1][int(self.enemigosVista[choiseEnemy].hexagono[:2])-1].nivel > 0:
+								if not enemy.suelo:
+									f.write("1\n")
+									f.write("PD\n")
+									f.write("2000\n")
+									f.write(enemy.hexagono)
+									f.write("Mech\n")
+								# No se ataca
+								else:
+									f.write("0\n")
+							# Si estamos por debajo
+							elif self.mapa.mapa[int(self.jugador.hexagono[2:4])-1][int(self.jugador.hexagono[:2])-1].nivel - self.mapa.mapa[int(self.enemigosVista[choiseEnemy].hexagono[2:4])-1][int(self.enemigosVista[choiseEnemy].hexagono[:2])-1].nivel < 0:
+								# Realizamos un combo de puños
+								f.write("2\n")
+								f.write("BI\n")
+								f.write("1000\n")
+								f.write(enemy.hexagono)
+								f.write("Mech\n")
+								
+								f.write("BD\n")
+								f.write("1000\n")
+								f.write(enemy.hexagono)
+								f.write("Mech\n")
+							# Mismo nivel
+							else:
+								if not enemy.suelo:
+									# Realizamos un combo.
+									f.write("3\n")
+									f.write("BI\n")
+									f.write("1000\n")
+									f.write(enemy.hexagono)
+									f.write("Mech\n")
+									
+									f.write("BD\n")
+									f.write("1000\n")
+									f.write(enemy.hexagono)
+									f.write("Mech\n")
+								else:
+									f.write("1\n")
+								
+								f.write("PD\n")
+								f.write("2000\n")
+								f.write(enemy.hexagono)
+								f.write("Mech\n")
+						# Si tenemos armas
+						else:
+							BI = False
+							PI = False
+							BD = False
+							PD = False
+							used = 0
+							# Comprobamos qué armas se han usado
+							for i in range(len(self.jugador.localizaciones)):
+								# Localizacion del arma
+								if i == 0 and localizaciones[i]:
+									BI = True
+								elif i == 2 and localizaciones[i]:
+									PI = True
+								elif i == 3 and localizaciones[i]:
+									PD = True
+								elif i == 5 and localizaciones[i]:
+									BD = True
+								
 							# No se pueden dar dos patadas en el mismo turno (pegaremos con la pierna derecha)
-							if PI == False and PD == False :
-								PD = True
-							# Numero de extremidades que se usaran para el ataque
-							if BI == False :
-								used += 1
-							if PI == False :
-								used += 1
-							if BD == False :
-								used += 1
-							if PD == False :
-								used += 1
-							f.write(str(used) + "\n")
-							print "usos",used
-							if not enemy.suelo:
-								if BI == False :
-									print "ATTT"
+							if (not PI) and (not PD):
+								PI = True
+							
+							# Si estamos por encima
+							if self.mapa.mapa[int(self.jugador.hexagono[2:4])-1][int(self.jugador.hexagono[:2])-1].nivel - self.mapa.mapa[int(self.enemigosVista[choiseEnemy].hexagono[2:4])-1][int(self.enemigosVista[choiseEnemy].hexagono[:2])-1].nivel > 0:
+								if not enemy.suelo:
+									# Numero de extremidades que se usaran para el ataque
+									f.write("1\n")
+									if (not PI):
+										f.write("PI\n")
+										f.write("2000\n")
+										f.write(enemy.hexagono)
+										f.write("Mech\n")
+									
+									if (not PD):
+										f.write("PD\n")
+										f.write("2000\n")
+										f.write(enemy.hexagono)
+										f.write("Mech\n")
+								# No se ataca
+								else:
+									f.write("0\n")
+							# Si estamos por debajo
+							elif self.mapa.mapa[int(self.jugador.hexagono[2:4])-1][int(self.jugador.hexagono[:2])-1].nivel - self.mapa.mapa[int(self.enemigosVista[choiseEnemy].hexagono[2:4])-1][int(self.enemigosVista[choiseEnemy].hexagono[:2])-1].nivel < 0:
+								# Numero de extremidades que se usaran para el ataque
+								used = 0
+								if (not BI):
+									used += 1
+								if (not BD):
+									used += 1
+								
+								f.write(str(used)+"\n")
+								if (not BI):
 									f.write("BI\n")
 									f.write("1000\n")
 									f.write(enemy.hexagono)
 									f.write("Mech\n")
 								
-								if BD == False :
-									print "ATTT"
+								if (not BD):
 									f.write("BD\n")
 									f.write("1000\n")
 									f.write(enemy.hexagono)
 									f.write("Mech\n")
-							
-							if PI == False :
-								print "ATTT"
-								f.write("PI\n")
-								f.write("2000\n")
-								f.write(enemy.hexagono)                               
-								f.write("Mech\n")
-							
-							if PD == False :
-								print "ATTT"
-								f.write("PD\n")
-								f.write("2000\n")
-								f.write(enemy.hexagono)
-								f.write("Mech\n")
-				print "Hecho"
+							# Mismo nivel
+							else:
+								if not enemy.suelo:
+									# Numero de extremidades que se usaran para el ataque
+									used = 0
+									if (not BI):
+										used += 1
+									if (not PI):
+										used += 1
+									if (not BD):
+										used += 1
+									if (not PD):
+										used += 1
+									f.write(str(used)+"\n")
+									if (not BI):
+										f.write("BI\n")
+										f.write("1000\n")
+										f.write(enemy.hexagono)
+										f.write("Mech\n")
+									
+									if (not BD):
+										f.write("BD\n")
+										f.write("1000\n")
+										f.write(enemy.hexagono)
+										f.write("Mech\n")
+									
+									if (not PI):
+										f.write("PI\n")
+										f.write("2000\n")
+										f.write(enemy.hexagono)
+										f.write("Mech\n")
+									
+									if (not PD):
+										f.write("PD\n")
+										f.write("2000\n")
+										f.write(enemy.hexagono)
+										f.write("Mech\n")
+								else:
+									f.write("1\n")
+									if (not PI):
+										f.write("PI\n")
+										f.write("2000\n")
+										f.write(enemy.hexagono)
+										f.write("Mech\n")
+									
+									if (not PD):
+										f.write("PD\n")
+										f.write("2000\n")
+										f.write(enemy.hexagono)
+										f.write("Mech\n")
+				# No se ataca
+				else:
+					print "No ataca por la diff de lvl"
+					f.write("0\n")
 			# No se ataca
 			else:
+				print "No ataca porque no son adyacentes."
 				f.write("0\n")
-		# Nno se ataca
+		# No se ataca
 		else:
+			print "No ataca porque no hay enem"
 			f.write("0\n")
 		f.close()
 		

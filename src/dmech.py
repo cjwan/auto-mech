@@ -52,21 +52,20 @@ class Dmech(object):
 		self.__internalHeadPoints = None
 		self.__equippedComponentsNumber = None
 		self.component = []
-	
-	
+		
 		self.__weaponsNumber = None
 		self.__actuatorsNumber = None
 		self.actuator = []
-	
+		
 		self.location = []
 		for i in range(8):
 			self.location.append(Location())
-	
+		
 		self.__walkPoints = None
 		self.__runPoints = None
 		self.__jumpPoints = None
 		self.__radiatorsType = None # 0-simple or 1-double
-		
+	
 	def getName (self):
 		return self.__name
 	

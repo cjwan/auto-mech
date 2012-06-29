@@ -6,10 +6,11 @@
 #       Copyright 2012 Juan Manuel Rodríguez Trillo <trillop@correo.ugr.es>
 #       
 
-import sys
+import sys,os
 from pathfinder import *
 from mechsSBT import *
 from mapaSBT import *
+from defmechSBT import *
 from configSBT import *
 from iniSBT import *
 from utils import *
@@ -28,12 +29,21 @@ class Movimiento:
 		# Fichero mapaJx.sbt
 		self.board = MapaSBT(self.playerN)
 		self.board.leeMapa()
+		self.fichMapa = 'mapaJ'+str(playerN)+'.sbt'
 		# Fichero iniciativaJx.sbt
 		self.ini = Iniciativa(self.playerN)
 		# Fichero de configuración
 		self.conf = ConfigSBT(self.playerN)
 		self.conf.leeFichero()
-		
+		# Ficheros defMechJx-i.sbt
+		self.dmech = []
+		dm_fich = 'defmechJ'+str(playerN)+'-'
+		for i in range(len(self.mechs.mechs)+1):
+			sub_dm = dm_fich+str(i)+'.sbt'
+			dm = DefMech()
+			dm.readDefMech(sub_dm)
+			self.dmech.append(dm)
+		print "Defmechs = ",len(self.dmech)
 		self.movType = None
 		self.nextCell = None
 		self.nextFace = None
@@ -78,14 +88,14 @@ class Movimiento:
 		# Obtenemos su localización y orientación
 		for m in self.mechs.mechs:
 			if m.nombre == enemy:
-				faceTorsoEnemy = (m.lado+2)%6
-				cellEnemy = int(m.hexagono[2:4])-1,int(m.hexagono[0:2])-1
+				self.faceTorsoEnemy = (m.lado+2)%6
+				self.cellEnemy = int(m.hexagono[2:4])-1,int(m.hexagono[0:2])-1
 		
 		# Si estamos en el suelo -> Nos levantamos
 		if self.jugador.suelo and self.jugador.andar >= 2:
 			self.getUp = True
 			# Obtenemos nuestra posición relativa respecto del enemigo.
-			face = relative_position(self.jugadorCell, cellEnemy)
+			face = relative_position(self.jugadorCell, self.cellEnemy)
 			# Nos levantamos andando.
 			self.movType = 0
 			self.nextCell = self.jugadorCell
@@ -98,8 +108,8 @@ class Movimiento:
 			self._hide()
 		else: # Si nuestro turno es después -> Nos acercamos por detrás
 			
-			self.path, self.movType = self._approach(cellEnemy,faceTorsoEnemy)
-			print "Desde ",self.jugadorCell,"Lado ",self.jugadorLado," Hasta ",cellEnemy
+			self.path, self.movType = self._approach(self.cellEnemy,self.faceTorsoEnemy)
+			print "Desde ",self.jugadorCell,"Lado ",self.jugadorLado," Hasta ",self.cellEnemy
 			print self.path,self.movType
 		self.fileAccion()
 	
@@ -109,6 +119,116 @@ class Movimiento:
 		print "HIDE"
 		self.movType = 3
 	
+	def posicionDisparo(self,celda):
+		# Buscamos la posición más elevada alrededor de la celda.
+		celdas = []
+		for i in range(-5,5):
+			if i!=0:
+				if celda[0]+i >= 0 and celda[0]+i < self.board.getAncho():
+					celdas.append((celda[0]-i,celda[1]))
+				if celda[1]+i >= 0 and celda[1]+i < self.board.getAlto():
+					celdas.append((celda[0],celda[1]+i))
+				if celda[0]+i >= 0 and celda[0]+i < self.board.getAncho() and celda[1]+i >= 0 and celda[1]+i < self.board.getAlto():
+					celdas.append((celda[0]+i,celda[1]+i))
+		# Seleccionamos las de mayor nivel
+		max_lev = 0
+		sel = []
+		for i in celdas:
+			if self.board.mapa[i[0]][i[1]].nivel >= max_lev:
+				max_lev = self.board.mapa[i[0]][i[1]].nivel
+				sel.append(i)
+		# Seleccionamos desde las que tenemos LdV
+		fin = []
+		for i in sel:
+			if self.visionLine(celda,i):
+				fin.append(i)
+		# Buscamos el que más cerca esté de nuestra posición.
+		min_d1,min_d2 = 100,100
+		min_pos = (0,0)
+		for i in fin:
+			if abs(i[0]-self.jugadorCell[0]) <= min_d1 and abs(i[1]-self.jugadorCell[1]) <= min_d2:
+				min_d1 = abs(i[0]-self.jugadorCell[0])
+				min_d2 = abs(i[1]-self.jugadorCell[1])
+				min_pos = i
+		# Encontramos el lado para orientar el mech
+		lado = 0
+		if min_pos[0] < self.jugadorCell[0]:
+			if min_pos[1] == self.jugadorCell[1]:
+				lado = 0
+			elif min_pos[1] < self.jugadorCell[1]:
+				lado = 5
+			elif min_pos[1] > self.jugadorCell[1]:
+				lado = 1
+		elif min_pos[0] >= self.jugadorCell[0]:
+			if min_pos[1] == self.jugadorCell[1]:
+				lado = 3
+			elif min_pos[1] < self.jugadorCell[1]:
+				lado = 4
+			elif min_pos[1] > self.jugadorCell[1]:
+				lado = 2
+		
+		return min_pos,lado
+	
+	def posicionMelee(self,enemy):
+		# Obtenemos los sucesores de la celda del enemigo.
+		posiciones = self.board.sucesores(enemy,0,1)
+		# Comprobamos la celda de la espalda del enemigo.
+		x = adjacent_cells(enemy, self.faceTorsoEnemy)
+		if abs(self.board.mapa[enemy[0]][enemy[1]].nivel-self.board.mapa[x[0]][x[1]].nivel) > 2:
+			x = (1000,1000)
+		
+		vale = []
+		for p in posiciones:
+			if (abs(self.board.mapa[enemy[0]][enemy[1]].nivel-self.board.mapa[p[0]][p[1]].nivel) >= 0) and (abs(self.board.mapa[enemy[0]][enemy[1]].nivel-self.board.mapa[p[0]][p[1]].nivel) < 2):
+				vale.append(p)
+		
+		# Buscamos el que más cerca esté de nuestra posición.
+		min_d1,min_d2 = abs(x[0]-self.jugadorCell[0]),abs(x[1]-self.jugadorCell[1])
+		min_pos = (x[0],x[1])
+		for i in vale:
+			if abs(i[0]-self.jugadorCell[0]) <= min_d1 and abs(i[1]-self.jugadorCell[1]) <= min_d2:
+				min_d1 = abs(i[0]-self.jugadorCell[0])
+				min_d2 = abs(i[1]-self.jugadorCell[1])
+				min_pos = i
+		
+		return min_pos,facing_side(min_pos,enemy)
+	
+	def visionLine(self,enemy,pos):
+		GroundPlayer = "0"
+		
+		GroundEnemy = "0"
+		
+		val1 = str(enemy[1]+1)
+		if len(val1) <2:
+			val1='0'+val1
+		val2 = str(enemy[0]+1)
+		if len(val2) <2:
+			val2='0'+val2
+		cellGoal = str(val1)+str(val2)
+		val1 = str(pos[1]+1)
+		if len(val1) <2:
+			val1='0'+val1
+		val2 = str(pos[0]+1)
+		if len(val2) <2:
+			val2='0'+val2
+		cellSource = str(val1)+str(val2)
+		
+		# LDVyC.exe <nombre_fichero_mapa> <hexágono_origen> <suma_de_nivel_origen> <hexágono_destino> <suma_de_nivel_destino>
+		execute = "LDVyC.exe "+self.fichMapa+" "+cellSource+" "+GroundPlayer+" "+cellGoal+" "+GroundEnemy
+		
+		# Ejecutar el programa de LineaVison
+		os.system(execute)
+		
+		try:
+			file = open("LDV.sbt", "r")
+		except IOError:
+			error("No existe el archivo LDV.sbt ")
+		
+		file.readline(); 
+		hayLDV = str2bool(file.readline())
+		file.close()
+		return hayLDV
+	
 	""" Calcula el camino mínimo para acercarse al hexágono en el que se
 		encuentra el enemigo por el lado de su espalda.
 		
@@ -117,20 +237,29 @@ class Movimiento:
 		@return (camino mínimo,tipo de movimiento)
 	"""
 	def _approach (self, enemy, faceTorsoEnemy):
-		# Obtenemos las celdas adyacentes a la posición del enemigo.
-		x = adjacent_cells(enemy, faceTorsoEnemy)
-		
 		# Preparamos el algoritmo A*
 		pf = PathFinder(self.board.sucesores, self.board.moveCost, self.board.heuristic_to_goal)
 		A = Pos(self.jugadorCell, self.jugadorLado)
-		B = Pos(x, facing_side(x, enemy))
 		can = False
-		#~ print "hex =",self.jugador.hexagono
-		#~ print "Andar =",self.jugador.andar,"\nCorrer =",self.jugador.correr,"\nSaltar =",self.jugador.saltar
-		# Obtenemos un path andando.
-		#~ if self.jugador.andar != 0:
-		print "Andando"
-		path, can, cost = pf.compute_path_until_PM(A, B, 0,self.jugador.andar)
+		path = None
+		# Si tenemos armas buscamos una posición de disparo
+		if self.dmech[self.playerN].mech.getWeaponsNumber() > 0:
+			objetivo = self.posicionDisparo(enemy)
+			B = Pos(objetivo[0],objetivo[1])
+			# Obtenemos un path andando.
+			print "Andando"
+			path, can, cost = pf.compute_path_until_PM(A, B, 0,self.jugador.andar)
+		# Si no tenemos armas, buscamos una posición a melé
+		else:
+			objetivo = self.posicionMelee(enemy)
+			B = Pos(objetivo[0],objetivo[1])
+			# Obtenemos un path andando.
+			print "Andando"
+			path, can, cost = pf.compute_path_until_PM(A, B, 0,self.jugador.andar)
+		
+		
+		#~ B = Pos(objetivo[0], facing_side(x, enemy))
+		
 		#~ print 'Path=',path,'\nCAN=',can,'\nCost=',cost
 		if can == False and self.jugador.correr != 0:
 			# Obtenemos un path corriendo
@@ -206,7 +335,7 @@ class Movimiento:
 			print "LAST PATH=",self.path
 			self.movType = 3
 		elif len(self.path) == 1:
-			if int(self.jugador.hexagono[:2]) == self.path[0].pos[1]+1 and int(self.jugador.hexagono[2:4]) == self.path[0].pos[0]+1:
+			if int(self.jugador.hexagono[:2]) == self.path[0].pos[1]+1 and int(self.jugador.hexagono[2:4]) == self.path[0].pos[0]+1 and (not self.getUp):
 				self.movType = 3
 				
 		# Tipo de movimiento a realizar

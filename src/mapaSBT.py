@@ -194,25 +194,24 @@ class MapaSBT(object):
 			if (int(m[2:4])-1 == c2[0]) and (int(m[:2])-1 == c2[1]):
 				mech = True
 		
-		if mech:
-			print "Coordenada",c2,self.mapa[c2[0]][c2[1]].objeto,self.mapa[c2[0]][c2[1]].garrote
-			print "Hay un mech"
-		# Si Correr o Andar y hay Fuego o un obstáculo o un mech
-		if ((self.mapa[c2[0]][c2[1]].fuego or (self.mapa[c2[0]][c2[1]].objeto != 1 and self.mapa[c2[0]][c2[1]].objeto != 255) or mech) and (moveType == 1 or moveType == 0)):
-			print "No puede!"
-			return False
-		# Si Correr y la profundidad del agua es < -1
-		if (self.mapa[c1[0]][c1[1]].terreno == 2 and self.mapa[c1[0]][c1[1]].nivel < -1 and moveType == 1):
-			return False
-		diff = abs( self.mapa[c1[0]][c1[1]].nivel - self.mapa[c2[0]][c2[1]].nivel )
-		# Si la diferencia de nivel <= 2 y Correr o Andar
-		if ( diff <= 2 and (moveType == 0 or moveType == 1)):
-			if not mech:
+		# Si no hay un mech
+		if not mech:
+			# Si Correr o Andar y hay Fuego o un obstáculo o un mech
+			if ((self.mapa[c2[0]][c2[1]].fuego or (self.mapa[c2[0]][c2[1]].objeto != 1 and self.mapa[c2[0]][c2[1]].objeto != 255)) and (moveType == 1 or moveType == 0)):
+				print "No puede!"
+				return False
+			# Si Correr y la profundidad del agua es < -1
+			if (self.mapa[c1[0]][c1[1]].terreno == 2 and self.mapa[c1[0]][c1[1]].nivel < -1 and moveType == 1):
+				return False
+			diff = abs( self.mapa[c1[0]][c1[1]].nivel - self.mapa[c2[0]][c2[1]].nivel )
+			# Si la diferencia de nivel <= 2 y Correr o Andar
+			if ( diff <= 2 and (moveType == 0 or moveType == 1)):
 				vale = True
-		# Si Saltar y la diferencia de nivel <= PM
-		elif ( diff <= PM and moveType == 2):
-			if not mech:
+			# Si Saltar y la diferencia de nivel <= PM
+			elif ( diff <= PM and moveType == 2):
 				vale = True
+		else:
+			vale = False
 		return vale
 	
 	""" Heurística - Estimación del coste en distancia real de un
@@ -275,7 +274,8 @@ def facing_side (p1, p2):
 	@return La casilla adyacente a la posición p y la cara face.
 """
 def adjacent_cells(p, face):
-	r1 = 0; r0 = 0
+	r1 = 0
+	r0 = 0
 	if ((p[1]+1)%2 == 1): #columnas impares
 		if face == 0: # N
 			r0 = p[0] -1
@@ -330,7 +330,7 @@ def areAdjacent(c,c2):
 					continue
 			else:
 				if (i == 1 and j == 1) or (i == 0 and j == 0) or (j == 1 and i == -1):
-						continue
+					continue
 			newFil = (c[0]) +j
 			newCol = (c[1]) +i
 			slist.append((newFil, newCol))
