@@ -126,11 +126,7 @@ class Movimiento:
 		for i in range(-5,5):
 			if i!=0:
 				if celda[0]+i >= 0 and celda[0]+i < self.board.getAlto():
-<<<<<<< HEAD
-					celdas.append((celda[0]-i,celda[1]))
-=======
 					celdas.append((celda[0]+i,celda[1]))
->>>>>>> Moverse
 				if celda[1]+i >= 0 and celda[1]+i < self.board.getAncho():
 					celdas.append((celda[0],celda[1]+i))
 				if celda[0]+i >= 0 and celda[0]+i < self.board.getAncho() and celda[1]+i >= 0 and celda[1]+i < self.board.getAlto():
@@ -158,7 +154,7 @@ class Movimiento:
 				min_d2 = abs(i[1]-self.jugadorCell[1])
 				min_pos = i
 		# Encontramos el lado para orientar el mech
-		lado = 0
+		"""lado = 0
 		if min_pos[0] < self.jugadorCell[0]:
 			if min_pos[1] == self.jugadorCell[1]:
 				lado = 0
@@ -172,13 +168,8 @@ class Movimiento:
 			elif min_pos[1] < self.jugadorCell[1]:
 				lado = 4
 			elif min_pos[1] > self.jugadorCell[1]:
-				lado = 2
-		
-<<<<<<< HEAD
-		return min_pos,relative_position(min_pos,self.enemy)
-=======
+				lado = 2"""
 		return min_pos,relative_position(min_pos,celda)
->>>>>>> Moverse
 	
 	def posicionMelee(self,enemy):
 		# Obtenemos los sucesores de la celda del enemigo.
@@ -202,11 +193,7 @@ class Movimiento:
 				min_d2 = abs(i[1]-self.jugadorCell[1])
 				min_pos = i
 		
-<<<<<<< HEAD
-		return min_pos,relative_position(min_pos,self.enemy)
-=======
 		return min_pos,relative_position(min_pos,enemy)
->>>>>>> Moverse
 	
 	def visionLine(self,enemy,pos):
 		GroundPlayer = "0"
@@ -258,11 +245,7 @@ class Movimiento:
 		can = False
 		path = None
 		flag = False
-<<<<<<< HEAD
-		for m in self.mechs:
-=======
 		for m in self.mechs.mechs:
->>>>>>> Moverse
 			if m.nombre == self.i_enemy and (not m.suelo):
 				flag = True
 		# Si tenemos armas buscamos una posición de disparo
