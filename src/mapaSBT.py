@@ -197,7 +197,8 @@ class MapaSBT(object):
 		# Si no hay un mech
 		if not mech:
 			# Si Correr o Andar y hay Fuego o un obstáculo o un mech
-			if ((self.mapa[c2[0]][c2[1]].fuego or (self.mapa[c2[0]][c2[1]].objeto != 1 and self.mapa[c2[0]][c2[1]].objeto != 255)) and (moveType == 1 or moveType == 0)):
+			#~ if ((self.mapa[c2[0]][c2[1]].fuego or (self.mapa[c2[0]][c2[1]].objeto != 1 and self.mapa[c2[0]][c2[1]].objeto != 255)) and (moveType == 1 or moveType == 0)):
+			if ((self.mapa[c2[0]][c2[1]].objeto != 1 and self.mapa[c2[0]][c2[1]].objeto != 255)) and (moveType == 1 or moveType == 0)):
 				print "No puede!"
 				return False
 			# Si Correr y la profundidad del agua es < -1

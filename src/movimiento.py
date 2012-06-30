@@ -55,7 +55,7 @@ class Movimiento:
 		 4-derecha 5-levantarse 6-cuerpo a tierra
 		"""
 		self.stepCell = []
-		
+		self.i_enemy = 1
 		self.path = None
 		self.jugador = self.mechs.jugador
 		self.jugadorCell = int(self.jugador.hexagono[2:4])-1,int(self.jugador.hexagono[0:2])-1
@@ -85,6 +85,7 @@ class Movimiento:
 	def nextMove(self):
 		# Obtenemos un objetivo.
 		enemy,distance = self.setTarjet()
+		self.i_enemy = enemy
 		# Obtenemos su localización y orientación
 		for m in self.mechs.mechs:
 			if m.nombre == enemy:
@@ -124,9 +125,9 @@ class Movimiento:
 		celdas = []
 		for i in range(-5,5):
 			if i!=0:
-				if celda[0]+i >= 0 and celda[0]+i < self.board.getAncho():
+				if celda[0]+i >= 0 and celda[0]+i < self.board.getAlto():
 					celdas.append((celda[0]-i,celda[1]))
-				if celda[1]+i >= 0 and celda[1]+i < self.board.getAlto():
+				if celda[1]+i >= 0 and celda[1]+i < self.board.getAncho():
 					celdas.append((celda[0],celda[1]+i))
 				if celda[0]+i >= 0 and celda[0]+i < self.board.getAncho() and celda[1]+i >= 0 and celda[1]+i < self.board.getAlto():
 					celdas.append((celda[0]+i,celda[1]+i))
@@ -167,7 +168,7 @@ class Movimiento:
 			elif min_pos[1] > self.jugadorCell[1]:
 				lado = 2
 		
-		return min_pos,lado
+		return min_pos,relative_position(min_pos,self.enemy)
 	
 	def posicionMelee(self,enemy):
 		# Obtenemos los sucesores de la celda del enemigo.
@@ -179,7 +180,7 @@ class Movimiento:
 		
 		vale = []
 		for p in posiciones:
-			if (abs(self.board.mapa[enemy[0]][enemy[1]].nivel-self.board.mapa[p[0]][p[1]].nivel) >= 0) and (abs(self.board.mapa[enemy[0]][enemy[1]].nivel-self.board.mapa[p[0]][p[1]].nivel) < 2):
+			if (abs(self.board.mapa[enemy[0]][enemy[1]].nivel-self.board.mapa[p[1]][p[0]].nivel) >= 0) and (abs(self.board.mapa[enemy[0]][enemy[1]].nivel-self.board.mapa[p[0]][p[1]].nivel) < 2):
 				vale.append(p)
 		
 		# Buscamos el que más cerca esté de nuestra posición.
@@ -191,7 +192,7 @@ class Movimiento:
 				min_d2 = abs(i[1]-self.jugadorCell[1])
 				min_pos = i
 		
-		return min_pos,facing_side(min_pos,enemy)
+		return min_pos,relative_position(min_pos,self.enemy)
 	
 	def visionLine(self,enemy,pos):
 		GroundPlayer = "0"
@@ -242,8 +243,12 @@ class Movimiento:
 		A = Pos(self.jugadorCell, self.jugadorLado)
 		can = False
 		path = None
+		flag = False
+		for m in self.mechs:
+			if m.nombre == self.i_enemy and (not m.suelo):
+				flag = True
 		# Si tenemos armas buscamos una posición de disparo
-		if self.dmech[self.playerN].mech.getWeaponsNumber() > 0:
+		if self.dmech[self.playerN].mech.getWeaponsNumber() > 0 and flag:
 			objetivo = self.posicionDisparo(enemy)
 			B = Pos(objetivo[0],objetivo[1])
 			# Obtenemos un path andando.
@@ -334,9 +339,9 @@ class Movimiento:
 		if self.path == [] or self.path == None:
 			print "LAST PATH=",self.path
 			self.movType = 3
-		elif len(self.path) == 1:
-			if int(self.jugador.hexagono[:2]) == self.path[0].pos[1]+1 and int(self.jugador.hexagono[2:4]) == self.path[0].pos[0]+1 and (not self.getUp):
-				self.movType = 3
+		#~ elif len(self.path) == 1:
+			#~ if int(self.jugador.hexagono[:2]) == self.path[0].pos[1]+1 and int(self.jugador.hexagono[2:4]) == self.path[0].pos[0]+1 and (not self.getUp):
+				#~ self.movType = 3
 				
 		# Tipo de movimiento a realizar
 		file.write(str(mov[self.movType])+"\n")
